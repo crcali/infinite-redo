@@ -33,12 +33,10 @@ import org.team3128.common.utility.math.Pose2D;
 import org.team3128.common.utility.math.Rotation2D;
 import org.team3128.common.utility.test_suite.CanDevices;
 import org.team3128.common.utility.test_suite.ErrorCatcherUtility;
-import org.team3128.compbot.commands.*;
-import org.team3128.compbot.calibration.*;
 import org.team3128.compbot.subsystems.*;
 import org.team3128.compbot.subsystems.Constants;
 import org.team3128.compbot.subsystems.RobotTracker;
-import org.team3128.compbot.subsystems.StateTracker.RobotState;
+//import org.team3128.compbot.subsystems.StateTracker.RobotState;
 
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -86,7 +84,6 @@ public class MainCompbot extends NarwhalRobot {
 
     @Override
     protected void teleopPeriodic() {
-        scheduler.resume();
     }
 
     
@@ -108,7 +105,7 @@ public class MainCompbot extends NarwhalRobot {
 
     @Override
     protected void disabledInit() {
-        s
+        
     }
 
     public static void main(String... args) {
