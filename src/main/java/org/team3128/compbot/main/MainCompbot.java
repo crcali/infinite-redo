@@ -62,6 +62,12 @@ import org.team3128.common.generics.ThreadScheduler;
 
 public class MainCompbot extends NarwhalRobot {
 
+    static FalconDrive drive = FalconDrive.getInstance();
+
+    public Joystick joystickRight, joystickLeft;
+    public ListenerManager listenerLeft, listenerRight;
+
+    private DriveCommandRunning driveCmdRunning;
     
     public static void setCanChain() {  
         
@@ -69,7 +75,15 @@ public class MainCompbot extends NarwhalRobot {
 
     @Override
     protected void constructHardware() {
-        
+        joystickRight = new Joystick(1);
+        listenerRight = new ListenerManager(joystickRight);
+        addListenerManager(listenerRight);
+
+        joystickLeft = new Joystick(0);
+        listenerLeft = new ListenerManager(joystickLeft);
+        addListenerManager(listenerLeft);
+
+        driveCmdRunning = new DriveCommandRunning();
     }
 
     @Override
@@ -79,6 +93,15 @@ public class MainCompbot extends NarwhalRobot {
 
     @Override
     protected void setupListeners() {
+        listenerRight.addMultiListener(() -> {
+            if (driveCmdRunning.isRunning) {
+                double horiz = -0.5 * listenerRight.getAxis("MoveTurn"); //0.7
+                double vert = -1.0 * listenerRight.getAxis("MoveForwards");
+                double throttle = -1.0 * listenerRight.getAxis("Throttle");
+
+                drive.arcadeDrive(horiz, vert, throttle, true);
+            }
+        }, "MoveTurn", "MoveForwards", "Throttle");
         
     }
 
