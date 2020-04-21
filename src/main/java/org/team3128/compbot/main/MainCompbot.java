@@ -62,10 +62,22 @@ import org.team3128.common.generics.ThreadScheduler;
 
 public class MainCompbot extends NarwhalRobot {
 
+    ExecutorService executor = Executors.newFixedThreadPool(6);
+    ThreadScheduler scheduler = new ThreadScheduler();
+    Thread auto;
+
     static FalconDrive drive = FalconDrive.getInstance();
 
     public Joystick joystickRight, joystickLeft;
     public ListenerManager listenerLeft, listenerRight;
+    public AHRS ahrs;
+    public static PowerDistributionPanel pdp;
+
+    public NetworkTable table;
+    public NetworkTable limelightTable;
+
+    public Limelight limelight;
+    public Limelight[] limelights;
 
     private DriveCommandRunning driveCmdRunning;
     
@@ -75,6 +87,10 @@ public class MainCompbot extends NarwhalRobot {
 
     @Override
     protected void constructHardware() {
+        scheduler.schedule(drive, executor);
+
+        ahrs = drive.ahrs;
+
         joystickRight = new Joystick(1);
         listenerRight = new ListenerManager(joystickRight);
         addListenerManager(listenerRight);
@@ -84,6 +100,9 @@ public class MainCompbot extends NarwhalRobot {
         addListenerManager(listenerLeft);
 
         driveCmdRunning = new DriveCommandRunning();
+
+        limelight = new Limelight("limelight", Constants.VisionConstants.LIMELIGHT_ANGLE, Constants.VisionConstants.LIMELIGHT_HEIGHT, Constants.VisionConstants.LIMELIGHT_DISTANCE_FROM_FRONT, 14.5 * Length.in);
+        limelights = new Limelight[1];
     }
 
     @Override
@@ -107,28 +126,34 @@ public class MainCompbot extends NarwhalRobot {
 
     @Override
     protected void teleopPeriodic() {
+        scheduler.resume();
     }
 
     
 
     @Override
     protected void updateDashboard() {
-
+        NarwhalDashboard.put("time", DriverStation.getInstance().getMatchTime());
+        NarwhalDashboard.put("voltage", RobotController.getBatteryVoltage());
     }
 
     @Override
     protected void teleopInit() {
-        
+        scheduler.resume();
+        driveCmdRunning.isRunning = true;
+        limelight.setLEDMode(LEDMode.OFF);
     }
 
     @Override
     protected void autonomousInit() {
-        
+        scheduler.resume();
+        drive.resetGyro();
     }
 
     @Override
     protected void disabledInit() {
         
+        limelight.setLEDMode(LEDMode.OFF);
     }
 
     public static void main(String... args) {
