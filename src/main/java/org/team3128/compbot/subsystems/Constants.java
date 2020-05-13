@@ -109,4 +109,10 @@ public class Constants extends RobotConstants {
         
         }
 
+        public static class LiftConstants {
+                public static final double MIDDLE_DISTANCE = 5 * Length.in;
+                public static final double TOP_DISTANCE = 10 * Length.in;
+
+        }
+
 }

@@ -1,14 +1,16 @@
 package org.team3128.compbot.subsystems;
+
 import org.team3128.common.hardware.motor.LazyCANSparkMax;
 import org.team3128.common.hardware.misc.Piston;
 import org.team3128.common.utility.Log;
 import edu.wpi.first.wpilibj.command.Command;
+
 public class Intake {
     public enum IntakeState
     {
-        INTAKE(true, “Intake”),
-        OUTTAKE(true, “Outtake”),
-        HOLDING(true, “Holding”);
+        INTAKE(true, "Intake"),
+        OUTTAKE(true, "Outtake"),
+        HOLDING(true, "Holding");
         private boolean PistonState;
         private String name;
         private IntakeState(boolean PistonState, String name) {
@@ -32,7 +34,7 @@ public class Intake {
         if (instance != null) {
             return instance;
         }
-        Log.fatal(“LiftIntake”, “Attempted to get instance before initializtion! Call initialize(...) first.“);
+        Log.fatal("LiftIntake", "Attempted to get instance before initializtion! Call initialize(...) first.");
         return null;
     }
     public static void initialize(LazyCANSparkMax intakeMotorTop, LazyCANSparkMax intakeMotorBottom, IntakeState state, Piston Piston) {
@@ -77,4 +79,3 @@ public class Intake {
         }
     }
 }
-
