@@ -1,6 +1,17 @@
 package org.team3128.compbot.subsystems;
 
+import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.RobotController;
+
+import com.ctre.phoenix.motorcontrol.ControlMode;
+
+import org.team3128.compbot.subsystems.Constants;
 import org.team3128.common.generics.Threaded;
+import org.team3128.common.hardware.motor.LazyTalonFX;
+import org.team3128.common.utility.units.Length;
+import org.team3128.common.utility.units.Angle;
+import org.team3128.common.utility.Log;
+
 
 public class Arm extends Threaded {
 
@@ -19,13 +30,14 @@ public class Arm extends Threaded {
 
     }
 
-    private enum ArnControlMode {
+    public static enum ArmControlMode {
+
         PERCENT(1, "Percent Output"),
 		POSITION(1, "Position"),
         ZEROING(1, "Zeroing");
         
-        private int pidSlot;
-        private String name;
+        public int pidSlot;
+        public String name;
 
         private ArmControlMode(int pidSlot, String name) {
             this.pidSlot = pidSlot;
@@ -43,32 +55,15 @@ public class Arm extends Threaded {
 		}
     }
 
-    public void setControlMode(FourbarControlMode mode) {
-        if (mode != controlMode) {
-            controlMode = mode;
-            Log.debug("FourBar", "Setting control mode to " + mode.name() + ", with PID slot" + mode.getPIDSlot);
-            fourBarMotor.selectProfileSlot(mode.getPIDSlot(), 0);
-        }
-    }
-    public void setState(ArmState armState) {
-        state = armState;
-
-        Log.info("Arm", "Going to " + state.targetAngle + "degrees");
-        angleControl(state.targetAngle)
-    }
-
-    public LazyCANSparkMax fourBarMotor;
-    FourBarControlMode controlMode;
-    FourBarState state;
+    public LazyTalonFX armMotor;
+    ArmControlMode controlMode;
+    ArmState state;
 
     public DigitalInput limitSwitch;
     double limitSwitchAngle;
     int maxVelocity;
 
     public boolean override = false;
-    
-    public double maxAngle = +95.0 * Angle.DEGREES; // TODO: Add to constants class
-	public double minAngle = -90.0 * Angle.DEGREES;
 
 	public boolean disabled = false;
 
@@ -76,9 +71,9 @@ public class Arm extends Threaded {
 	public boolean canRaise = true;
 
 	private double desiredTarget = 0;
-
+    public double output = 0;
 	private double lastTime;
-	private double lastError;
+	private double prevError;
 
 	private double joystickThreshold = 0.1;
 
@@ -92,8 +87,8 @@ public class Arm extends Threaded {
 		return null;
     }
     
-    public static void initialize(LazyCANSparkMax armMotor, ArmState state, DigitalInput limitSwitch, double ratio, double limitSwitchAngle, int maxVelocity) {
-		instance = new FourBar(armMotor, state, limitSwitch, ratio, limitSwitchAngle, maxVelocity);
+    public static void initialize(LazyTalonFX armMotor, ArmState state, DigitalInput limitSwitch, double ratio, double limitSwitchAngle, int maxVelocity) {
+		instance = new Arm(armMotor, state, limitSwitch, ratio, limitSwitchAngle, maxVelocity);
     }
 
     private void configMotors() {
@@ -104,10 +99,24 @@ public class Arm extends Threaded {
         limitSwitch = new DigitalInput(1);
     }
 
-    private Arm(LazyCANSparkMax armMotor, ArmState state, DigitalInput limitSwitch, double ratio, double limitSwitchAngle, int maxVelocity) {
+    private Arm(LazyTalonFX armMotor, ArmState state, DigitalInput limitSwitch, double ratio, double limitSwitchAngle, int maxVelocity) {
         configMotors();
         configSensors();
-        setState
+        setState(state);
+    }
+
+    public void setControlMode(ArmControlMode mode) {
+        if (mode != controlMode) {
+            controlMode = mode;
+            Log.debug("Arm", "Setting control mode to " + mode.name() + ", with PID slot" + mode.getPIDSlot());
+            armMotor.selectProfileSlot(mode.getPIDSlot(), 0);
+        }
+    }
+    
+    public void setState(ArmState armState) {
+        state = armState;
+        Log.info("Arm", "Going to " + state.targetAngle + "degrees");
+        angleControl(state.targetAngle);
     }
     
     public void angleControl(double angle) {
@@ -116,7 +125,7 @@ public class Arm extends Threaded {
 		desiredTarget = angle;
 
 		lastTime = RobotController.getFPGATime();
-		lastError = desiredTarget - this.getCurrentAngle();
+		prevError = desiredTarget - this.getAngle();
     }
     
     public boolean getLimitSwitch()
@@ -125,119 +134,74 @@ public class Arm extends Threaded {
     }
     
     public void brake() {
-		angleControl(this.getCurrentAngle());
+		angleControl(this.getAngle());
     }
     
     public void zero() {
 		setControlMode(ArmControlMode.ZEROING);
 
-		desiredTarget = ZEROING_VELOCITY;
+		desiredTarget = 0;
 
 		lastTime = RobotController.getFPGATime();
-		lastError = desiredTarget - fourBarMotor.getSelectedSensorVelocity();
+		prevError = desiredTarget - armMotor.getSelectedSensorVelocity();
 	}
 
+    public double getAngle() {
+        return (((getEncoderPos() / Constants.MechanismConstants.ENCODER_RESOLUTION_PER_ROTATION)
+                / Constants.ArmConstants.ARM_GEARING) * 360) % 360; 
+    }
+
+    public int getEncoderPos() {
+        return armMotor.getSelectedSensorPosition(0);
+    }
+    
     @Override
     public void update() {   
-        // int zeroVelocityCount = 0;
 
-		// 	double currentTarget = 0;
-		// 	double previousTarget = 0;
+        int plateauCount = 0;
 
-		// 	double kP;
-        //     double kD;
-            
-        //     if (this.controlMode == ArmControlMode.ZEROING) {
-        //         if (Math.abs(armMotor.getSelectedSensorVelocity()) < 2) {
-        //             zeroVelocityCount += 1;
-        //         }
-        //         else {
-        //             zeroVelocityCount = 0;
-        //         }
+        double currentTarget = getAngle();
+        double error = desiredTarget - currentTarget;
 
-        //         if (zeroVelocityCount > 30 || this.getLimitSwitch()) {
-        //             this.state = FourBarState.VERTICAL;
-        //             Log.info("Arm", "Zeroing sequence hit hard/soft stop. Braking now...");
+        double kP_term = Constants.ArmConstants.ARM_PID.kP * error;
+        double kD_term = Constants.ArmConstants.ARM_PID.kD * (error - prevError) / Constants.MechanismConstants.DT;
 
-        //             this.angleControl(85.0 * Angle.DEGREES);
+		double voltage_output = armFeedForward(desiredTarget) + kP_term + kD_term;
+        double voltage = RobotController.getBatteryVoltage();
 
-        //             zeroVelocityCount = 0;
-        //         }
-        //     }
+        output = voltage_output / voltage;
+        if (output > 1) {
+            // Log.info("ARM",
+            //         "WARNING: Tried to set power above available voltage! Saturation limit SHOULD take care of this");
+            output = 1;
+        } else if (output < -1) {
+            // Log.info("ARM",
+            //         "WARNING: Tried to set power above available voltage! Saturation limit SHOULD take care of this ");
+            output = -1;
+        }
 
-        //     else if (this.getLimitSwitch()) {
-        //         this.setCurrentAngle(this.limitSwitchAngle);
+        if (Math.abs(error) < Constants.ArmConstants.ANGLE_THRESHOLD) {
+            plateauCount++;
+        } else {
+            plateauCount = 0;
+        }
 
-        //         this.state = ArmState.VERTICAL;
-        //     }
 
-        //     else if (this.disabled) {
-        //         this.armMotor.set(ControlMode.PercentOutput, 0);
-        //     }
+        if((desiredTarget == 0) && !getLimitSwitch()) {
+            output = Constants.ArmConstants.ZEROING_VELOCITY;
+            // Log.info("Arm", "Using ZEROING_POWER to finish zeroing the arm.");
+        } else if((desiredTarget == 0) && getLimitSwitch()) {
+            output = 0;
+            // Log.info("Arm", "In zero position, setting output to 0.");
+        }
 
-        //     else {
-        //         currentTarget = 0;
 
-        //         if (this.controlMode == ArmControlMode.PERCENT) {
-        //             if (this.override) {
-        //                 currentTarget = desiredTarget;
-        //                 this.armMotor.set(ControlMode.PercentOutput, currentTarget);
-        //             }
-        //             else {
-        //                 this.canRaise = this.getCurrentAngle() < this.maxAngle - 2 * Angle.DEGREES;
-        //                 this.canLower = this.getCurrentAngle() > this.minAngle + 1 * Angle.DEGREES;
+        armMotor.set(ControlMode.PercentOutput, output);
 
-        //                 if (desiredTarget > 0 && this.canRaise) {
-        //                     currentTarget = 0.7 * getAdjustedTarget(desiredTarget);
-        //                 }
-        //                 else if (desiredTarget < 0 && this.canLower) {
-        //                     currentTarget = 0.4 * getAdjustedTarget(desiredTarget);
-        //                 }
-
-        //                 if ((Math.abs(currentTarget) < 0.0001 && this.canRaise && this.canLower)) {
-        //                     this.brake();
-        //                 }
-        //             }
-        //         }
-        //         else if (this.controlMode == ArmControlMode.POSITION) {
-        //             lastError = this.error;
-        //             this.error = desiredTarget - this.getCurrentAngle();
-
-        //             if (this.error > 0) {
-        //                 kP = 0.23;
-        //             }
-        //             else {
-        //                 kP = 0.01;
-        //             }
-        //             kD = 0;
-
-        //             currentTarget = this.getFeedForwardPower() + kP * this.error + kD * (this.error - lastError) * 1000000 / (RobotController.getFPGATime() - this.lastTime);
-        //             this.lastTime = RobotController.getFPGATime();
-        //         }
-        //         else if (this.controlMode == ArmControlMode.ZEROING) {
-        //             lastError = this.error;
-        //             this.error = desiredTarget - fourBarMotor.getSelectedSensorVelocity();
-
-        //             currentTarget = 0.8272;
-        //             this.lastTime = RobotController.getFPGATime();
-        //         }
-
-        //         if (Math.abs(currentTarget - previousTarget) > 0.0001) {
-        //             this.armBarMotor.set(ControlMode.PercentOutput, currentTarget);
-
-        //             previousTarget = currentTarget;
-        //         }
-        //     }
-
-        //     try
-        //     {
-        //         Thread.sleep(10);
-        //     }
-        //     catch (InterruptedException e)
-        //     {
-        //         e.printStackTrace();
-        //     }
-        // }
+        prevError = error;
         
+    }
+    public double armFeedForward(double desired) {
+        return 0;
     }
 }

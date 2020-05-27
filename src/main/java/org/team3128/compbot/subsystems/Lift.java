@@ -19,6 +19,6 @@ public class Lift extends Threaded {
 
     @Override
     public void update() {    
-
+        
     }
 }

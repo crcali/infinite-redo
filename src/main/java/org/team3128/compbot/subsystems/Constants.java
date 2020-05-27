@@ -106,6 +106,11 @@ public class Constants extends RobotConstants {
         }
 
         public static class ArmConstants {
+                public static final int ZEROING_VELOCITY = 1;
+                public static final double ARM_GEARING = 1;
+                public static final double ANGLE_THRESHOLD = 1;
+                
+                public static final PIDConstants ARM_PID = new PIDConstants(0, 0.15, 0.01, 0);
         
         }
 
