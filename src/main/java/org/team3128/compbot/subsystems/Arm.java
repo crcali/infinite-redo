@@ -20,7 +20,8 @@ public class Arm extends Threaded {
     public static enum ArmState {
 
         VERTICAL(90 * Angle.DEGREES),
-        DOWN(45 * Angle.DEGREES);
+        DOWN_SMARTBELL(45 * Angle.DEGREES),
+        DOWN_BOX(50 * Angle.DEGREES);
 
         public double targetAngle;
 
@@ -57,7 +58,7 @@ public class Arm extends Threaded {
 
     public LazyTalonFX armMotor;
     ArmControlMode controlMode;
-    ArmState state;
+    public static ArmState state;
 
     public DigitalInput limitSwitch;
     double limitSwitchAngle;

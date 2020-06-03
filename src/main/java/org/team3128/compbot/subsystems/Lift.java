@@ -79,6 +79,12 @@ public class Lift extends Threaded {
     public double getCurrentHeight() {
 		return liftMotor.getSelectedSensorPosition(0) / Constants.LiftConstants.RATIO;
     }
+
+    public void zero() {
+        state = LiftState.ZERO;
+        positionControl(0);
+        Log.info("Lift", "Zeroing");
+    }
     
     public void setState(LiftState state){
         state = state;

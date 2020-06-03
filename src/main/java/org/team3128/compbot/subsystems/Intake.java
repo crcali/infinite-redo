@@ -7,6 +7,8 @@ import org.team3128.common.hardware.misc.Piston;
 import org.team3128.common.utility.Log;
 import edu.wpi.first.wpilibj.command.Command;
 
+import org.team3128.compbot.subsystems.*;
+
 public class Intake extends Threaded {
     public enum IntakeState
     {
@@ -33,7 +35,6 @@ public class Intake extends Threaded {
     private IntakeState newState;
     public IntakeState currentState;
     private Piston Piston;
-    private Thread cargoThread;
     private static Intake instance = null;
     public static Intake getInstance() {
     
@@ -76,7 +77,37 @@ public class Intake extends Threaded {
 
     @Override
     public void update() {    
+        if (this.newState == null) {
+            if (Arm.state == Arm.ArmState.DOWN_SMARTBELL) {
+                this.setIntakePowerSmartBell(-1.0);
+            }
+
+            if (Arm.state == Arm.ArmState.DOWN_BOX) {
+                this.setIntakePowerSmartBell(-1.0);
+            }
+        }
         
+        else {
+            if (this.newState == IntakeState.INTAKE_BOX) {
+            this.setIntakePowerBox(-1.0);
+            }
+            else if (this.newState == IntakeState.OUTTAKE_BOX) {
+                this.setIntakePowerBox(1.0);
+            }
+            else {
+                this.setIntakePowerBox(0.0);
+            }
+
+            if (this.newState == IntakeState.INTAKE_SMARTBELL) {
+                this.setIntakePowerBox(-1.0);
+            }
+            else if (this.newState == IntakeState.OUTTAKE_SMARTBELL) {
+                this.setIntakePowerSmartBell(1.0);
+            }
+            else {
+                this.setIntakePowerSmartBell(0.0);
+            }
+        }
     }
 
 }
