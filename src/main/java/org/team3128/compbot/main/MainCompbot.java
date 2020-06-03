@@ -181,12 +181,12 @@ public class MainCompbot extends NarwhalRobot {
         });
 
         listenerRight.nameControl(new Button(3), "liftHigh");
-        listenerRight.addButtonDownListener("intakeSmartbell", () -> {
+        listenerRight.addButtonDownListener("liftHigh", () -> {
             lift.setState(LiftState.TOP);
         });
 
         listenerRight.nameControl(new Button(3), "liftMiddle");
-        listenerRight.addButtonDownListener("intakeSmartbell", () -> {
+        listenerRight.addButtonDownListener("liftMiddle", () -> {
             lift.setState(LiftState.MIDDLE);
         });
 
@@ -198,6 +198,24 @@ public class MainCompbot extends NarwhalRobot {
                 lift.positionControl(vert);
             }
         }, "MoveLift");
+
+        listenerLeft.nameControl(new POV(0), "ArmPOV");
+        listenerLeft.addListener("ArmPOV", (POVValue pov) -> {
+            switch (pov.getDirectionValue()) {
+                case 8:
+                case 7:
+                case 1:
+                    arm.angleControl(arm.getAngle() + 5);
+                    break;
+                case 3:
+                case 4:
+                case 5:
+                    arm.angleControl(arm.getAngle() - 5);
+                    break;
+                default:
+                    break;
+            }
+        });
         
     }
 
