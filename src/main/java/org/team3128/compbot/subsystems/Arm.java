@@ -78,6 +78,7 @@ public class Arm extends Threaded {
 	private double joystickThreshold = 0.1;
 
     private static Arm instance = null;
+    
 	public static Arm getInstance() {
 		if (instance != null) {
 			return instance;

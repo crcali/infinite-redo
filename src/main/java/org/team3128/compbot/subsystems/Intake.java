@@ -15,7 +15,7 @@ public class Intake extends Threaded {
         HOLDING_BOX(false, "Holding"),
         INTAKE_SMARTBELL(false, "Intake"),
         OUTTAKE_SMARTBELL(false, "Outtake"),
-        HOLDING_SMARTBELLfalse, "Holding");
+        HOLDING_SMARTBELL(false, "Holding");
         private boolean PistonState;
         private String name;
         private IntakeState(boolean PistonState, String name) {
@@ -29,7 +29,7 @@ public class Intake extends Threaded {
             return name;
         }
     }
-    public LazyCANSparkMax intakeMotorBoxTop, intakeMotorBoxBottom, intakeMotorSmartBellTop, intakeMotorSmartBellBottom;
+    public LazyCANSparkMax intakeMotorBox, intakeMotorSmartbell;
     private IntakeState newState;
     public IntakeState currentState;
     private Piston Piston;
@@ -44,13 +44,13 @@ public class Intake extends Threaded {
     return null;
     }
 
-    public static void initialize(LazyCANSparkMax intakeMotorTop, LazyCANSparkMax intakeMotorBottom, IntakeState state, Piston Piston) {
-        instance = new Intake(intakeMotorTop, intakeMotorBottom, state, Piston);
+    public static void initialize(LazyCANSparkMax intakeMotorBox, LazyCANSparkMax intakeMotorSmartbell, IntakeState state, Piston Piston) {
+        instance = new Intake(intakeMotorBox, intakeMotorSmartbell, state, Piston);
     }
 
-    private Intake(LazyCANSparkMax intakeMotorTop, LazyCANSparkMax intakeMotorBottom, IntakeState state, Piston Piston) {
-        this.intakeMotorTop = intakeMotorTop;
-        this.intakeMotorBottom = intakeMotorBottom;
+    private Intake(LazyCANSparkMax intakeMotorBox, LazyCANSparkMax intakeMotorSmartbell, IntakeState state, Piston Piston) {
+        this.intakeMotorBox = intakeMotorBox;
+        this.intakeMotorSmartbell = intakeMotorSmartbell;
         this.Piston = Piston;
         this.newState = state;
     }
@@ -67,13 +67,11 @@ public class Intake extends Threaded {
         }
     }
     private void setIntakePowerBox(double power) {
-        intakeMotorBoxTop.set(power);
-        intakeMotorBoxBottom.set(power);
+        intakeMotorBox.set(power);
     }
     
     private void setIntakePowerSmartBell(double power) {
-        intakeMotorSmartBellTop.set(power);
-        intakeMotorSmartBellBottom.set(power);
+        intakeMotorSmartbell.set(power);
     }
 
     @Override

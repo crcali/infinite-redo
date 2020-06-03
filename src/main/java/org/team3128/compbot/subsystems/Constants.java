@@ -118,6 +118,14 @@ public class Constants extends RobotConstants {
                 public static final double MIDDLE_DISTANCE = 5 * Length.in;
                 public static final double TOP_DISTANCE = 10 * Length.in;
 
+                public static final double RATIO = 51745 / (1 * Length.in); // 1 should be height
+
+                public static final double BRAKE_POWER = 0.15;
+
+                public static final PIDConstants LIFT_PID = new PIDConstants(0, 0.15, 0.01, 0);
+
+                public static final double HEIGHT_THRESHOLD = 1;
+                public static final double ZEROING_VELOCITY = 1;
         }
 
 }
